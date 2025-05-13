@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fintrac - Student Expense Tracker</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            height: 100%;
+        }
+        .landing {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to bottom right, #004e92, #000000);
+            color: white;
+            text-align: center;
+        }
+        .landing img {
+            width: 200px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .landing h1 {
+            font-size: 3em;
+            margin: 0.5em 0;
+        }
+        .landing p {
+            font-size: 1.2em;
+            margin-bottom: 2em;
+        }
+        .landing button {
+            padding: 0.7em 2em;
+            background-color: #007acc;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .main-content {
+            display: none;
+            padding: 2em;
+            background-color: #ffffff;
+        }
+        h2 {
+            color: #004e92;
+        }
+        form {
+            margin-bottom: 2em;
+        }
+        label {
+            display: block;
+            margin: 0.5em 0 0.2em;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 0.5em;
+            margin-bottom: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button.action {
+            background-color: #004e92;
+            color: white;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #e6f2ff;
+            margin: 0.5em 0;
+            padding: 0.5em;
+            border-left: 5px solid #007acc;
+        }
+        canvas {
+            margin: 2em 0;
+            background: #ffffff;
+            padding: 1em;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="landing">
+        <img src="https://via.placeholder.com/200x100.png?text=Fintrac+Logo" alt="Fintrac Logo">
+        <h1>Fintrac</h1>
+        <p>Track Your Expense Anytime and Anywhere</p>
+        <button onclick="enterApp()">Start Tracking</button>
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <h2>Add Expense</h2>
+        <form id="expense-form">
+            <label for="expense-name">Expense Name</label>
+            <input type="text" id="expense-name" name="expense-name" required>
+
+            <label for="expense-amount">Amount (₹)</label>
+            <input type="number" id="expense-amount" name="expense-amount" required>
+
+            <button type="submit" class="action">Add Expense</button>
+        </form>
+
+        <h2>Track Expenses</h2>
+        <ul id="expense-list"></ul>
+
+        <h2>Save Money</h2>
+        <form id="saving-form">
+            <label for="saving-amount">Amount to Save (₹)</label>
+            <input type="number" id="saving-amount" name="saving-amount" required>
+
+            <button type="submit" class="action">Add Saving</button>
+        </form>
+
+        <h3>Total Expenses: ₹<span id="total-expense">0</span></h3>
+        <h3>Total Savings: ₹<span id="total-saving">0</span></h3>
+
+        <h2>Weekly/Monthly/Yearly Expense Progress</h2>
+        <canvas id="expenseChart" width="400" height="200"></canvas>
+
+        <h2>Weekly/Monthly/Yearly Saving Progress</h2>
+        <canvas id="savingChart" width="400" height="200"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function enterApp() {
+            document.querySelector('.landing').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+        }
+
+        const expenseForm = document.getElementById('expense-form');
+        const savingForm = document.getElementById('saving-form');
+        const expenseList = document.getElementById('expense-list');
+        const totalExpense = document.getElementById('total-expense');
+        const totalSaving = document.getElementById('total-saving');
+
+        let expenseSum = 0;
+        let savingSum = 0;
+
+        const expenseData = [0, 0, 0];
+        const savingData = [0, 0, 0];
+
+        const expenseChart = new Chart(document.getElementById('expenseChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Weekly', 'Monthly', 'Yearly'],
+                datasets: [{
+                    label: 'Expenses (₹)',
+                    backgroundColor: '#007acc',
+                    data: expenseData
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        const savingChart = new Chart(document.getElementById('savingChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Weekly', 'Monthly', 'Yearly'],
+                datasets: [{
+                    label: 'Savings (₹)',
+                    backgroundColor: '#004e92',
+                    data: savingData
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        expenseForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const name = document.getElementById('expense-name').value.trim();
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+
+            if (name && !isNaN(amount)) {
+                const li = document.createElement('li');
+                li.textContent = `${name}: ₹${amount.toFixed(2)}`;
+                expenseList.appendChild(li);
+
+                expenseSum += amount;
+                totalExpense.textContent = expenseSum.toFixed(2);
+
+                // Update the expense chart data
+                expenseData[0] = expenseSum * 0.2; // Weekly (20%)
+                expenseData[1] = expenseSum * 0.5; // Monthly (50%)
+                expenseData[2] = expenseSum; // Yearly (100%)
+                expenseChart.update();
+            }
+
+            expenseForm.reset();
+        });
+
+        savingForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const amount = parseFloat(document.getElementById('saving-amount').value);
+
+            if (!isNaN(amount)) {
+                savingSum += amount;
+                totalSaving.textContent = savingSum.toFixed(2);
+
+                // Update the saving chart data
+                savingData[0] = savingSum * 0.2; // Weekly (20%)
+                savingData[1] = savingSum * 0.5; // Monthly (50%)
+                savingData[2] = savingSum; // Yearly (100%)
+                savingChart.update();
+            }
+
+            savingForm.reset();
+        });
+    </script>
+</body>
+</html>
